@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V R Vasudevan · Robotics</title>
+<meta name="description" content="V R Vasudevan, MS Robotics at Georgia Tech. Learning-based control for humanoids and aerial robots.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout idea: a lab-notebook spine. Left rail of mono metadata, right column of content; hero is a live height-map. */
+  --paper:#f3f4f1;
+  --panel:#ffffff;
+  --ink:#141b2d;
+  --muted:#5a6273;
+  --rule:#d7dbd6;
+  --accent:#b3892f;      /* tech gold */
+  --accent-ink:#7a5a14;
+  --signal:#2e5bd8;      /* trajectory blue */
+  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0e1220; --panel:#151a2b; --ink:#e7e9ef; --muted:#98a0b3; --rule:#262d43;
+    --accent:#d8ad4f; --accent-ink:#e8c272; --signal:#7c9dff; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0e1220; --panel:#151a2b; --ink:#e7e9ef; --muted:#98a0b3; --rule:#262d43;
+  --accent:#d8ad4f; --accent-ink:#e8c272; --signal:#7c9dff; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.08}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
+.brand{font:700 15px/1 var(--display);text-decoration:none;letter-spacing:.01em}
+.brand span{color:var(--accent-ink)}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;font:500 13px/1 var(--mono)}
+nav ul a{text-decoration:none;color:var(--muted)}
+nav ul a:hover{color:var(--ink)}
+@media (max-width:720px){nav ul{display:none}}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center;padding:56px 0 40px}
+.kicker{font:500 12px/1.4 var(--mono);color:var(--accent-ink);letter-spacing:.08em;text-transform:uppercase}
+.hero h1{font-size:clamp(42px,5.4vw,68px);font-weight:800;letter-spacing:-.02em;margin:14px 0 18px}
+.hero p.lede{font-size:19px;max-width:34em;color:var(--ink);margin:0 0 26px}
+.hero p.lede em{font-style:normal;background:linear-gradient(transparent 62%,color-mix(in srgb,var(--accent) 35%,transparent) 0)}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--ink);border-radius:999px;font:500 14px/1 var(--mono);text-decoration:none;transition:background .15s,color .15s}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:#141b2d}
+.viz{position:relative;aspect-ratio:1/0.82;border:1px solid var(--rule);border-radius:14px;background:var(--panel);overflow:hidden}
+.viz canvas{width:100%;height:100%;display:block}
+.viz .hud{position:absolute;left:14px;right:14px;bottom:12px;display:flex;justify-content:space-between;font:400 11px/1.4 var(--mono);color:var(--muted);pointer-events:none}
+.viz .hud b{color:var(--ink);font-weight:500}
+@media (max-width:880px){.hero{grid-template-columns:1fr;padding-top:36px}}
+
+/* metrics strip */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:8px 0 0}
+.metric{padding:22px 20px;border-right:1px solid var(--rule)}
+.metric:last-child{border-right:0}
+.metric .v{font:800 34px/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.metric .v small{font-size:16px;font-weight:700;color:var(--muted);margin-left:2px}
+.metric .l{margin-top:8px;font-size:13.5px;color:var(--muted);line-height:1.45}
+@media (max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.metric:nth-child(2){border-right:0}.metric:nth-child(-n+2){border-bottom:1px solid var(--rule)}}
+@media (max-width:420px){.metrics{grid-template-columns:1fr}.metric{border-right:0;border-bottom:1px solid var(--rule)}}
+
+/* sections */
+section{padding:72px 0 8px}
+.sec-head{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:baseline;margin-bottom:32px}
+.sec-head .idx{font:500 12px/1.4 var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.sec-head h2{font-size:clamp(30px,3.6vw,44px);font-weight:700;letter-spacing:-.015em}
+@media (max-width:720px){.sec-head{grid-template-columns:1fr;gap:6px}}
+
+/* about */
+.about{display:grid;grid-template-columns:200px 1fr;gap:24px}
+.about .body{max-width:66ch;font-size:17px}
+.about .body p{margin:0 0 14px}
+.interests{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font:500 12.5px/1 var(--mono);padding:7px 11px;border:1px solid var(--rule);border-radius:999px;background:var(--panel)}
+@media (max-width:720px){.about{grid-template-columns:1fr}}
+
+/* timeline */
+.tl{display:grid;gap:0}
+.role{display:grid;grid-template-columns:200px 1fr;gap:24px;padding:26px 0;border-top:1px solid var(--rule)}
+.role:last-child{border-bottom:1px solid var(--rule)}
+.role .meta{font:400 13px/1.6 var(--mono);color:var(--muted)}
+.role .meta .now{display:inline-block;margin-top:6px;padding:3px 8px;border-radius:4px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent-ink);font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.role h3{font-size:22px;font-weight:700}
+.role .sub{color:var(--muted);font-size:14.5px;margin:4px 0 12px}
+.role ul{margin:0;padding-left:18px;max-width:72ch}
+.role li{margin:0 0 8px}
+.role li strong{font-weight:600}
+.num{font-family:var(--mono);font-size:.92em;color:var(--accent-ink);font-weight:500}
+@media (max-width:720px){.role{grid-template-columns:1fr;gap:8px}}
+
+/* projects */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px 224px}
+@media (max-width:720px){.filters{margin-left:0}}
+.filters button{font:500 13px/1 var(--mono);padding:9px 14px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media (max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){.grid{grid-template-columns:1fr}}
+.card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--rule);border-radius:12px;overflow:hidden;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-3px);border-color:var(--accent)}
+@media (prefers-reduced-motion: reduce){.card,.card:hover{transition:none;transform:none}}
+.card .thumb{aspect-ratio:16/9;background:color-mix(in srgb,var(--ink) 4%,var(--panel));border-bottom:1px solid var(--rule);position:relative}
+.card .thumb svg{width:100%;height:100%;display:block}
+.card .thumb .tag{position:absolute;top:10px;left:10px;font:500 11px/1 var(--mono);padding:5px 8px;border-radius:4px;background:var(--panel);border:1px solid var(--rule);text-transform:uppercase;letter-spacing:.05em}
+.card .c{padding:18px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card h3{font-size:19px;font-weight:700}
+.card .when{font:400 12px/1 var(--mono);color:var(--muted)}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.card .stack{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
+.card .stack span{font:400 11.5px/1 var(--mono);padding:5px 7px;border-radius:4px;background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.card .ext{font:500 13px/1 var(--mono);color:var(--signal);text-decoration:none}
+.card .ext:hover{text-decoration:underline}
+.card[hidden]{display:none}
+
+/* publications */
+.pub{display:grid;grid-template-columns:200px 1fr;gap:24px;padding:22px 0;border-top:1px solid var(--rule)}
+.pub:last-of-type{border-bottom:1px solid var(--rule)}
+.venue{font:500 13px/1.3 var(--mono)}
+.venue .badge{display:inline-block;padding:4px 8px;border-radius:4px;border:1px solid var(--ink);margin-bottom:6px}
+.venue .type{display:block;color:var(--muted);font-weight:400}
+.pub h3{font-size:19px;font-weight:700;margin-bottom:6px;font-family:var(--body)}
+.pub .authors{font-size:14.5px;color:var(--muted);margin:0 0 8px}
+.pub .authors b{color:var(--ink);font-weight:600}
+.pub .pl{display:flex;gap:16px;font:500 13px/1 var(--mono)}
+.pub .pl a{color:var(--signal);text-decoration:none}
+.pub .pl a:hover{text-decoration:underline}
+@media (max-width:720px){.pub{grid-template-columns:1fr;gap:8px}}
+
+/* awards + skills */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:24px}
+.panel h3{font-size:20px;margin-bottom:16px}
+.award{display:grid;grid-template-columns:62px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--rule)}
+.award:first-of-type{border-top:0;padding-top:0}
+.award .place{font:800 26px/1 var(--display);color:var(--accent-ink)}
+.award .place small{font-size:12px;font-weight:500;font-family:var(--mono);display:block;color:var(--muted);margin-top:4px}
+.award p{margin:0;font-size:15px}
+.award p span{display:block;color:var(--muted);font-size:13.5px}
+.skillrow{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--rule);font-size:14.5px}
+.skillrow:first-of-type{border-top:0;padding-top:0}
+.skillrow .k{font:500 12px/1.6 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.skillrow .vals{display:flex;flex-wrap:wrap;gap:6px}
+.skillrow .vals span{font:400 13px/1 var(--mono);padding:6px 8px;border:1px solid var(--rule);border-radius:4px}
+
+/* contact */
+.contact{margin:80px 0 0;padding:56px 0 40px;border-top:1px solid var(--rule)}
+.contact h2{font-size:clamp(34px,5vw,60px);font-weight:800;letter-spacing:-.02em;max-width:16ch}
+.contact p{color:var(--muted);max-width:56ch;font-size:17px}
+.email{font:500 17px/1 var(--mono);margin:20px 0 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.email code{padding:10px 14px;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+.copy{font:500 13px/1 var(--mono);padding:10px 14px;border-radius:8px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer}
+footer{padding:24px 0 40px;font:400 12px/1.6 var(--mono);color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top">V R Vasudevan<span>.</span></a>
+    <ul>
+      <li><a href="#about">About</a></li>
+      <li><a href="#research">Research</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#publications">Publications</a></li>
+      <li><a href="#awards">Awards</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="wrap" id="top">
+  <div class="hero">
+    <div>
+      <div class="kicker">MS Robotics · Georgia Tech · LIDAR Lab</div>
+      <h1>Teaching robots to move through the real world.</h1>
+      <p class="lede">I'm Vasudevan, a graduate researcher working on <em>learning-based control</em> for humanoids and aerial robots, and on getting policies trained in simulation to hold up on hardware.</p>
+      <div class="links">
+        <a class="btn primary" href="#research">See my research</a>
+        <a class="btn" href="https://github.com/vasDEV2">GitHub</a>
+        <a class="btn" href="https://www.linkedin.com/in/vasudevanvr">LinkedIn</a>
+        <a class="btn" href="#publications">Papers</a>
+      </div>
+    </div>
+    <figure class="viz" aria-label="Animated height map of a staircase with a footstep trajectory, like the terrain a perceptive locomotion policy sees" style="margin:0">
+      <canvas id="terrain"></canvas>
+      <figcaption class="hud"><span>height map · stair skill</span><span>step <b id="stepH">18</b> cm · RMSE <b>0.10</b> m</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="metrics" role="list">
+    <div class="metric" role="listitem"><div class="v">0.10<small>m</small></div><div class="l">waypoint RMSE for humanoid stair climbing, 10–25 cm steps (sim)</div></div>
+    <div class="metric" role="listitem"><div class="v">2<small>cm</small> / 10<small>cm</small></div><div class="l">quadrotor RL hover RMSE in sim / on hardware at 100 Hz</div></div>
+    <div class="metric" role="listitem"><div class="v">60<small>%</small></div><div class="l">lower localization error than IMU-only odometry under GNSS denial</div></div>
+    <div class="metric" role="listitem"><div class="v">$60<small>k</small></div><div class="l">prize, 2nd among self-funded teams, DARPA Triage Challenge</div></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="about">
+    <div class="sec-head"><div class="idx">About</div><h2>From flying robots to walking ones</h2></div>
+    <div class="about">
+      <div></div>
+      <div class="body">
+        <p>I spent three and a half years building autonomous drones with Team UAS-DTU, first as an engineer and team pilot, then as Avionics Head leading 20+ people across perception, planning and control. We podiumed at three international competitions, including the DARPA Triage Challenge in Georgia.</p>
+        <p>Along the way I moved from classical pipelines toward learned controllers: PPO policies flying quadrotors on a Jetson at IIIT-Hyderabad, diffusion models estimating dynamics for adaptive control, and now perceptive locomotion for the Unitree R1 humanoid with Prof. Ye Zhao at Georgia Tech.</p>
+        <p>The question I keep returning to: how do we train policies that are robust enough to survive the gap between simulation and the real robot?</p>
+        <div class="interests">
+          <span class="chip">Humanoid locomotion</span><span class="chip">Reinforcement learning</span><span class="chip">Sim2Real</span><span class="chip">Aerial robotics</span><span class="chip">Vision-language-action models</span><span class="chip">Sensor fusion</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="research">
+    <div class="sec-head"><div class="idx">Research experience</div><h2>Where I've worked</h2></div>
+    <div class="tl">
+      <article class="role">
+        <div class="meta">Aug 2026 – present<br>Atlanta, USA<br><span class="now">Current</span></div>
+        <div>
+          <h3>LIDAR Lab, Georgia Tech</h3>
+          <div class="sub">Graduate Researcher · Advisor: Prof. Ye Zhao</div>
+          <ul>
+            <li><strong>Skill chaining for humanoid locomotion.</strong> Training teacher perceptive-locomotion policies for the Unitree R1 for skills like stair climbing and crouching, using an attention-based map encoder to compress height maps and PPO with a privileged critic.</li>
+            <li>Added an adaptive stair curriculum with shaped rewards that align gait and style with retargeted motion priors, reaching a waypoint RMSE of <span class="num">0.1 m</span> across step heights of <span class="num">10–25 cm</span> in simulation.</li>
+          </ul>
+        </div>
+      </article>
+      <article class="role">
+        <div class="meta">Nov 2025 – May 2026<br>Hyderabad, India</div>
+        <div>
+          <h3>Robotics Research Center, IIIT-Hyderabad</h3>
+          <div class="sub">Research Intern · Advisor: Prof. Spandan Roy</div>
+          <ul>
+            <li><strong>ML for aerial robotics.</strong> Trained a PPO quadrotor position controller in Isaac Sim with hover RMSE of <span class="num">2 cm</span> in sim and <span class="num">10 cm</span> on hardware, exported to ONNX and run on a Jetson Orin Nano at <span class="num">100 Hz</span>.</li>
+            <li>Built an adaptable end-to-end motor controller that estimates the model implicitly from state-action history, narrowing the Sim2Real gap.</li>
+            <li>Deployed diffusion policies onboard a multirotor to estimate acceleration residuals for an Adaptive Sliding Mode Controller, improving robustness under changing inertia during aerial manipulation.</li>
+          </ul>
+        </div>
+      </article>
+      <article class="role">
+        <div class="meta">Jul – Aug 2024<br>Lausanne, Switzerland</div>
+        <div>
+          <h3>EPFL</h3>
+          <div class="sub">Research Intern · Advisor: Prof. Jan Skaloud</div>
+          <ul>
+            <li><strong>OpenSimDrive.</strong> Implemented a vehicle dynamics model and integrated it into a graph-based sensor fusion framework, cutting localization error by <span class="num">60%</span> versus IMU-only odometry under GNSS denial, validated on <span class="num">3 hrs</span> of real driving data.</li>
+          </ul>
+        </div>
+      </article>
+      <article class="role">
+        <div class="meta">Feb 2022 – Jul 2025<br>Delhi, India</div>
+        <div>
+          <h3>Team UAS-DTU</h3>
+          <div class="sub">Avionics Head (previously Airframe &amp; Avionics Engineer) · Advisor: Prof. S. Indu</div>
+          <ul>
+            <li>Led avionics R&amp;D for a 20+ member team in perception, planning and control. The team podiumed at 3 international competitions.</li>
+            <li>Built a UAV target-following framework that localizes a target from a calibrated gimbal-mounted monocular camera (RMSE <span class="num">5 m</span>, follow speeds up to <span class="num">8 m/s</span>), flown at IMAV 2023 in Aachen.</li>
+            <li>Designed fixed-wing airframes and flight control for autonomous flight, and served as team pilot, standardizing flight-line operations.</li>
+          </ul>
+        </div>
+      </article>
+      <article class="role">
+        <div class="meta">Jun – Jul 2023<br>Delhi, India</div>
+        <div>
+          <h3>DRDO</h3>
+          <div class="sub">Project Intern</div>
+          <ul>
+            <li><strong>Rakshita.</strong> Digitized 100+ mechanical drawings of the CRPF bike-ambulance casualty evacuation vehicle in SolidWorks.</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="projects">
+    <div class="sec-head"><div class="idx">Selected projects</div><h2>Things I've built</h2></div>
+    <div class="filters" role="group" aria-label="Filter projects">
+      <button type="button" data-f="all" aria-pressed="true">All</button>
+      <button type="button" data-f="legged" aria-pressed="false">Legged</button>
+      <button type="button" data-f="aerial" aria-pressed="false">Aerial</button>
+      <button type="button" data-f="manip" aria-pressed="false">Manipulation</button>
+      <button type="button" data-f="ground" aria-pressed="false">Ground</button>
+    </div>
+    <div class="grid" id="grid">
+
+      <article class="card" data-c="legged">
+        <div class="thumb"><span class="tag">Legged</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-opacity=".35"><path d="M20 150h60v-22h60v-22h60v-22h60v-22h40"/></g><path d="M40 146 Q70 120 100 124 T160 102 T220 80 T280 58" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-dasharray="5 5"/><g fill="var(--accent)"><circle cx="40" cy="146" r="5"/><circle cx="100" cy="124" r="5"/><circle cx="160" cy="102" r="5"/><circle cx="220" cy="80" r="5"/><circle cx="280" cy="58" r="5"/></g></svg>
+        </div>
+        <div class="c"><div class="when">Aug 2026 – present · Georgia Tech</div><h3>Perceptive humanoid stair climbing</h3><p>Teacher policies for the Unitree R1 with an attention-based height-map encoder and an adaptive stair curriculum shaped by motion priors.</p>
+          <div class="stack"><span>IsaacLab</span><span>RSL-RL</span><span>PPO</span><span>PyTorch</span></div></div>
+      </article>
+
+      <article class="card" data-c="manip">
+        <div class="thumb"><span class="tag">Manipulation</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-opacity=".35"><rect x="30" y="40" width="70" height="50" rx="4"/><rect x="125" y="40" width="70" height="50" rx="4"/><rect x="220" y="40" width="70" height="50" rx="4"/></g><path d="M45 140 C100 100 150 160 200 120 S270 110 290 130" fill="none" stroke="var(--signal)" stroke-width="2.5"/><g fill="var(--accent)"><circle cx="45" cy="140" r="4"/><circle cx="125" cy="128" r="4"/><circle cx="200" cy="120" r="4"/><circle cx="290" cy="130" r="4"/></g><path d="M100 65h25M195 65h25" stroke="var(--accent)" stroke-width="2"/></svg>
+        </div>
+        <div class="c"><div class="when">Sep 2026 – present · Georgia Tech</div><h3>Synthetic data for VLA models</h3><p>Generating manipulation videos and recovering action sequences with inverse dynamics models, after Dream2Flow. Fine-tuning OpenVLA and π0.5 on LIBERO with multi-GPU training.</p>
+          <div class="stack"><span>OpenVLA</span><span>π0.5</span><span>LIBERO</span><span>JAX</span></div></div>
+      </article>
+
+      <article class="card" data-c="aerial">
+        <div class="thumb"><span class="tag">Aerial</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><g stroke="currentColor" stroke-opacity=".3"><path d="M40 90h240M160 20v140"/></g><circle cx="160" cy="90" r="34" fill="none" stroke="var(--signal)" stroke-dasharray="3 4"/><circle cx="160" cy="90" r="10" fill="none" stroke="var(--signal)" stroke-width="2"/><g transform="translate(163 87)" stroke="var(--accent)" stroke-width="3" fill="none"><path d="M-22 -10L22 10M-22 10L22 -10"/><circle cx="-22" cy="-10" r="8"/><circle cx="22" cy="10" r="8"/><circle cx="-22" cy="10" r="8"/><circle cx="22" cy="-10" r="8"/></g></svg>
+        </div>
+        <div class="c"><div class="when">Nov 2025 – May 2026 · IIIT-Hyderabad</div><h3>RL quadrotor control, Sim2Real</h3><p>PPO position controller trained in Isaac Sim, deployed through ONNX on a Jetson Orin Nano. 2 cm hover RMSE in sim, 10 cm in flight.</p>
+          <div class="stack"><span>Isaac Sim</span><span>PPO</span><span>ONNX</span><span>Jetson</span></div></div>
+      </article>
+
+      <article class="card" data-c="aerial">
+        <div class="thumb"><span class="tag">Aerial</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><rect x="30" y="118" width="40" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45"/><path d="M50 130 C120 130 150 60 230 50" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-dasharray="6 5"/><path d="M230 50 L200 140" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="2 4"/><g transform="translate(232 46)" stroke="var(--accent)" stroke-width="3" fill="none"><path d="M-16 0h32"/><circle cx="-16" cy="0" r="6"/><circle cx="16" cy="0" r="6"/></g><text x="24" y="40" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" fill-opacity=".6">"follow the red car"</text></svg>
+        </div>
+        <div class="c"><div class="when">2023 – 2025 · UAS-DTU</div><h3>UNIFollow &amp; rescue vehicle tracking</h3><p>Monocular target following for UAVs, flown at IMAV 2023 at up to 8 m/s with 5 m geotagging accuracy, later extended to natural-language conditioned following (IROS 2025 workshop).</p>
+          <div class="stack"><span>OpenCV</span><span>Kalman filter</span><span>DroneKit</span></div>
+          <a class="ext" href="https://github.com/vasDEV2/VehicleTracking">Code →</a></div>
+      </article>
+
+      <article class="card" data-c="aerial ground">
+        <div class="thumb"><span class="tag">Aerial + Ground</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-opacity=".3"><path d="M30 150h260"/></g><g fill="var(--accent)"><circle cx="90" cy="138" r="7"/><circle cx="210" cy="140" r="7"/><circle cx="250" cy="136" r="7"/></g><rect x="130" y="128" width="36" height="18" rx="3" fill="none" stroke="var(--signal)" stroke-width="2.5"/><g stroke="var(--signal)" stroke-width="2.5" fill="none"><path d="M60 50h40M190 40h40"/><circle cx="60" cy="50" r="6"/><circle cx="100" cy="50" r="6"/><circle cx="190" cy="40" r="6"/><circle cx="230" cy="40" r="6"/></g><path d="M80 56 L90 130M210 46 L210 132" stroke="var(--accent)" stroke-dasharray="2 4"/></svg>
+        </div>
+        <div class="c"><div class="when">Nov 2023 – Oct 2024 · DARPA</div><h3>DARPA Triage Challenge</h3><p>A four-agent UAV–UGV system for automated triage in mass casualty incidents, with mission planning and vital-sign assessment. Placed 2nd among self-funded teams at Event I.</p>
+          <div class="stack"><span>ROS2</span><span>pcl-ros</span><span>Docker</span></div>
+          <a class="ext" href="https://drive.google.com/drive/folders/1x_JkOFQz1aU62KwohakjmqB2b2nbJWbC?usp=sharing">Media →</a></div>
+      </article>
+
+      <article class="card" data-c="manip">
+        <div class="thumb"><span class="tag">Manipulation</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><path d="M60 150 L95 90 L150 70 L175 110" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M175 110 L195 148" stroke="var(--accent)" stroke-width="3"/><circle cx="210" cy="150" r="6" fill="var(--signal)"/><path d="M216 148 Q250 110 285 140" fill="none" stroke="var(--signal)" stroke-dasharray="4 4"/><circle cx="285" cy="146" r="7" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
+        </div>
+        <div class="c"><div class="when">Jul 2025</div><h3>Deep RL for robotic golf</h3><p>SAC trains a Franka Panda to grasp a club, orient it and strike the ball, guided by a potential-based hierarchical reward. 98% success over 100 runs.</p>
+          <div class="stack"><span>SB3</span><span>MuJoCo</span><span>SAC</span></div>
+          <a class="ext" href="https://github.com/vasDEV2/GolfRL">Code →</a></div>
+      </article>
+
+      <article class="card" data-c="ground">
+        <div class="thumb"><span class="tag">Ground</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><path d="M30 130 C90 60 150 150 210 80 S280 70 295 60" fill="none" stroke="currentColor" stroke-opacity=".4" stroke-width="2"/><path d="M30 134 C92 70 148 140 208 88 S278 82 295 70" fill="none" stroke="var(--signal)" stroke-width="2.5"/><g fill="var(--accent)"><circle cx="30" cy="134" r="4"/><circle cx="110" cy="96" r="4"/><circle cx="208" cy="88" r="4"/><circle cx="295" cy="70" r="4"/></g><text x="190" y="160" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" fill-opacity=".6">GNSS denied</text></svg>
+        </div>
+        <div class="c"><div class="when">Jul – Aug 2024 · EPFL</div><h3>OpenSimDrive</h3><p>A vehicle dynamics model fused into a graph-based estimator, cutting localization error by 60% when GNSS drops out.</p>
+          <div class="stack"><span>Sensor fusion</span><span>Factor graphs</span><span>C++</span></div>
+          <a class="ext" href="https://github.com/vasDEV2/MatSim">Code →</a></div>
+      </article>
+
+      <article class="card" data-c="aerial">
+        <div class="thumb"><span class="tag">Aerial</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-opacity=".35"><rect x="40" y="40" width="240" height="24" rx="3"/><rect x="40" y="78" width="240" height="24" rx="3"/><rect x="40" y="116" width="240" height="24" rx="3"/></g><path d="M30 52h260 v38 H40 v38 h250" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-dasharray="6 4"/><g fill="var(--accent)"><circle cx="90" cy="52" r="4"/><circle cx="200" cy="52" r="4"/><circle cx="150" cy="90" r="4"/><circle cx="240" cy="128" r="4"/><circle cx="70" cy="128" r="4"/></g></svg>
+        </div>
+        <div class="c"><div class="when">Feb – May 2024 · ICUAS</div><h3>UAV fruit count assessment</h3><p>Containerized Gazebo pipeline with an informed multi-target search planner, 2nd fastest bed traversal in phase 1. Team finished 3rd overall.</p>
+          <div class="stack"><span>ROS</span><span>Gazebo</span><span>Docker</span></div>
+          <a class="ext" href="https://drive.google.com/drive/folders/1bskkrpvLQNNLf4EP65x4AkM7YdEb0yOP?usp=sharing">Media →</a></div>
+      </article>
+
+      <article class="card" data-c="aerial">
+        <div class="thumb"><span class="tag">Aerial</span>
+          <svg viewBox="0 0 320 180" aria-hidden="true"><path d="M40 96 C110 70 210 70 280 96 C210 104 110 104 40 96Z" fill="none" stroke="var(--signal)" stroke-width="2.5"/><path d="M160 60 L160 130" stroke="currentColor" stroke-opacity=".35"/><path d="M130 130 h60" stroke="var(--accent)" stroke-width="3"/><text x="40" y="150" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" fill-opacity=".6">MTOW 6.6 kg · PF 0.45</text></svg>
+        </div>
+        <div class="c"><div class="when">Nov 2022 – Apr 2023 · SAE</div><h3>Project Articuno</h3><p>A high-lift fixed-wing UAV with 7 km range and 0.45 payload fraction, optimized for wing loading and thrust-to-weight. 3rd at the SAE Drone Development Challenge.</p>
+          <div class="stack"><span>XFoil</span><span>Ansys Fluent</span><span>MATLAB</span></div>
+          <a class="ext" href="https://drive.google.com/drive/folders/13W1coWdJLMR_LHysFTUuHBxi4XK8hq4g?usp=sharing">Media →</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="publications">
+    <div class="sec-head"><div class="idx">Publications</div><h2>Papers</h2></div>
+    <article class="pub">
+      <div class="venue"><span class="badge">CASE 2026</span><span class="type">Conference</span></div>
+      <div><h3>Reinforcement Learning with Inner-Loop Dynamics Estimator for Aerial Manipulation under Uncertainty</h3>
+        <p class="authors">S. Pratap Singh*, S. Ujjwal*, I. Chaudhary, <b>V. R. Vasudevan</b>, R. D. Dev, S. Roy</p></div>
+    </article>
+    <article class="pub">
+      <div class="venue"><span class="badge">IROS 2025</span><span class="type">Workshop · LeaPRiDE</span></div>
+      <div><h3>UNIFollow: Natural Language Conditioned Target Following Framework for UAVs</h3>
+        <p class="authors"><b>V. R. Vasudevan</b>, S. Grover, S. Indu</p>
+        <div class="pl"><a href="https://openreview.net/forum?id=oMlhfrv52K">Paper</a><a href="https://github.com/vasDEV2/VehicleTrackingRL">Code</a></div></div>
+    </article>
+    <article class="pub">
+      <div class="venue"><span class="badge">ICUAS 2023</span><span class="type">Conference</span></div>
+      <div><h3>A Modified Artificial Potential Field for UAV Collision Avoidance</h3>
+        <p class="authors">A. Srivastava, <b>V. R. Vasudevan</b>, Harikesh, R. Nalanthiga, P. B. Sujit</p>
+        <div class="pl"><a href="https://ieeexplore.ieee.org/document/10156492">Paper</a><a href="https://github.com/vasDEV2/CollisionAvoidance">Code</a></div></div>
+    </article>
+    <article class="pub">
+      <div class="venue"><span class="badge">RAS</span><span class="type">Journal · in preparation</span></div>
+      <div><h3>Model-Based Constraint for Trajectory Recovery in Low-Cost UGVs</h3>
+        <p class="authors"><b>V. R. Vasudevan</b>, K. J. Paul, J. Skaloud</p></div>
+    </article>
+  </section>
+
+  <section id="awards">
+    <div class="sec-head"><div class="idx">Recognition &amp; toolkit</div><h2>Awards and skills</h2></div>
+    <div class="two">
+      <div class="panel">
+        <h3>Honors</h3>
+        <div class="award"><div class="place">2nd<small>self-funded</small></div><p>DARPA Triage Challenge, Event I<span>$60,000 prize · Georgia, USA</span></p></div>
+        <div class="award"><div class="place">3rd</div><p>ICUAS UAV Challenge 2024<span>International Conference on Unmanned Aircraft Systems</span></p></div>
+        <div class="award"><div class="place">3rd</div><p>IMAV Hiker Rescue Challenge 2023<span>RWTH Aachen, Germany</span></p></div>
+        <div class="award"><div class="place">3rd</div><p>SAE India Drone Development Challenge<span>Against 30+ teams</span></p></div>
+        <div class="award"><div class="place">★</div><p>Research Excellence Award<span>Delhi Technological University · Golden Pride Ceremony 2026</span></p></div>
+      </div>
+      <div class="panel">
+        <h3>Toolkit</h3>
+        <div class="skillrow"><div class="k">Languages</div><div class="vals"><span>Python</span><span>C++</span><span>Bash</span></div></div>
+        <div class="skillrow"><div class="k">Simulation</div><div class="vals"><span>IsaacLab</span><span>Isaac Sim</span><span>MuJoCo</span><span>Gazebo</span></div></div>
+        <div class="skillrow"><div class="k">Learning</div><div class="vals"><span>PyTorch</span><span>JAX</span><span>RSL-RL</span><span>Stable-Baselines3</span><span>OpenVLA</span><span>π0.5</span><span>LIBERO</span><span>ONNX</span></div></div>
+        <div class="skillrow"><div class="k">Systems</div><div class="vals"><span>ROS</span><span>ROS2</span><span>Docker</span><span>Git</span><span>Linux</span></div></div>
+        <div class="skillrow"><div class="k">Hardware</div><div class="vals"><span>NVIDIA Jetson</span><span>Pixhawk</span><span>Intel RealSense</span><span>Arduino</span><span>Raspberry Pi</span></div></div>
+        <div class="skillrow"><div class="k">Education</div><div class="vals" style="display:block;font-size:14px;line-height:1.55"><b>MS Robotics</b>, Georgia Tech, 2026–2028<br><b>B.Tech</b> Production &amp; Industrial Eng., DTU, 2021–2025</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="kicker">Get in touch</div>
+    <h2>Open to research collaborations and internships.</h2>
+    <p>I'm especially interested in humanoid and legged locomotion, robot learning at scale, and deploying learned controllers on real hardware.</p>
+    <div class="email"><code id="mail">vasudevanvr2002@gmail.com</code><button class="copy" id="copyBtn" type="button">Copy email</button></div>
+    <div class="links">
+      <a class="btn" href="https://github.com/vasDEV2">GitHub</a>
+      <a class="btn" href="https://www.linkedin.com/in/vasudevanvr">LinkedIn</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap"><span>© 2026 V R Vasudevan</span><span>Atlanta, GA · Georgia Institute of Technology</span></footer>
+
+<script>
+/* Project filters */
+(function(){
+  const btns=[...document.querySelectorAll('.filters button')];
+  const cards=[...document.querySelectorAll('#grid .card')];
+  btns.forEach(b=>b.addEventListener('click',()=>{
+    btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    const f=b.dataset.f;
+    cards.forEach(c=>{c.hidden=!(f==='all'||c.dataset.c.split(' ').includes(f));});
+  }));
+})();
+
+/* Copy email */
+document.getElementById('copyBtn').addEventListener('click',async e=>{
+  const t=document.getElementById('mail').textContent;
+  try{await navigator.clipboard.writeText(t);e.target.textContent='Copied';}
+  catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById('mail'));const s=getSelection();s.removeAllRanges();s.addRange(r);e.target.textContent='Selected, press Ctrl+C';}
+  setTimeout(()=>e.target.textContent='Copy email',2200);
+});
+
+/* Hero: isometric height-map of a staircase with a footstep trajectory */
+(function(){
+  const cv=document.getElementById('terrain'), ctx=cv.getContext('2d');
+  const stepEl=document.getElementById('stepH');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W,H,dpr;
+  function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+  function size(){dpr=Math.min(devicePixelRatio||1,2);const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+  size(); addEventListener('resize',size);
+
+  const NX=34, NY=22;           // grid cells (x forward, y lateral)
+  const STEPS=6, run=4;         // stairs: each run cells long
+  function height(i,stepH){ const s=Math.floor((i-6)/run); return i<6?0:Math.min(s+1,STEPS)*stepH; }
+  function raw(x,y,z){return [x - y*0.55, -(x*0.32 + y*0.62)*0.9 - z*9];}
+  function proj(x,y,z){         // isometric projection fitted to the canvas
+    const pts=[[0,0,0],[NX,0,0],[0,NY,0],[NX,NY,0],[NX,0,1.6],[NX,NY,1.6]].map(p=>raw(...p));
+    const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const s=Math.min(W*0.86/(maxX-minX),(H-40)*0.86/(maxY-minY));
+    const ox=(W-(maxX-minX)*s)/2-minX*s, oy=((H-30)-(maxY-minY)*s)/2-minY*s;
+    const r=raw(x,y,z); return [ox+r[0]*s, oy+r[1]*s];
+  }
+  function frame(t){
+    const ink=css('--ink'), acc=css('--accent'), sig=css('--signal');
+    ctx.clearRect(0,0,W,H);
+    const stepH = 0.10 + 0.15*(0.5+0.5*Math.sin(t*0.00035));   // 10..25 cm
+    stepEl.textContent=Math.round(stepH*100);
+    const scan=(t*0.006)%(NX+8)-4;
+    // dots
+    for(let j=NY-1;j>=0;j--){
+      for(let i=0;i<NX;i++){
+        const z=height(i,stepH);
+        const [px,py]=proj(i,j,z);
+        const d=Math.abs(i-scan);
+        const lit=Math.max(0,1-d/3);
+        ctx.fillStyle=lit>0.05?acc:ink;
+        ctx.globalAlpha=0.18+0.25*(z/(STEPS*0.25))+lit*0.6;
+        const r=1.3+lit*1.4;
+        ctx.beginPath();ctx.arc(px,py,r,0,7);ctx.fill();
+      }
+    }
+    ctx.globalAlpha=1;
+    // stair edges
+    ctx.strokeStyle=ink;ctx.globalAlpha=.25;ctx.lineWidth=1;
+    for(let s=0;s<=STEPS;s++){
+      const i=6+s*run; if(i>=NX)break;
+      const z0=height(i-1,stepH), z1=height(i,stepH);
+      const a=proj(i-0.5,0,z0), b=proj(i-0.5,NY-1,z0), c=proj(i-0.5,0,z1), d=proj(i-0.5,NY-1,z1);
+      ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.moveTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.moveTo(a[0],a[1]);ctx.lineTo(c[0],c[1]);ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    // footstep trajectory: alternating feet climbing the center line
+    const mid=NY/2, feet=[];
+    for(let k=0;k<14;k++){const i=2+k*2.3; if(i>NX-1)break; const side=k%2?-1.4:1.4; feet.push([i,mid+side,height(Math.round(i),stepH)]);}
+    const prog=reduce?feet.length:((t*0.0012)%(feet.length+3));
+    // CoM path
+    ctx.strokeStyle=sig;ctx.lineWidth=2.2;ctx.setLineDash([6,5]);ctx.beginPath();
+    feet.forEach((f,k)=>{const p=proj(f[0],mid,f[2]+0.06);k?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});
+    ctx.stroke();ctx.setLineDash([]);
+    feet.forEach((f,k)=>{
+      const p=proj(f[0],f[1],f[2]);
+      const on=k<prog;
+      ctx.fillStyle=on?acc:'transparent';ctx.strokeStyle=on?acc:ink;ctx.globalAlpha=on?1:.35;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.ellipse(p[0],p[1],6,3.4,-0.35,0,7);ctx.fill();ctx.stroke();
+    });
+    ctx.globalAlpha=1;
+    // robot marker at current foothold
+    const cur=feet[Math.min(Math.floor(prog),feet.length-1)];
+    if(cur){const p=proj(cur[0],mid,cur[2]); ctx.strokeStyle=sig;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0],p[1]-38);ctx.stroke();ctx.fillStyle=sig;ctx.beginPath();ctx.arc(p[0],p[1]-44,6,0,7);ctx.fill();}
+    if(!reduce)requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
