@@ -53,7 +53,9 @@ nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px
 nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;font:500 13px/1 var(--mono)}
 nav ul a{text-decoration:none;color:var(--muted)}
 nav ul a:hover{color:var(--ink)}
-nav ul{margin-left:auto}
+nav ul{margin-left:auto;align-items:center}
+nav ul a.scholar{display:flex;color:var(--muted);opacity:.8;transition:color .15s,opacity .15s}
+nav ul a.scholar:hover{color:var(--ink);opacity:1}
 .cv-btn{font:500 13px/1 var(--mono);padding:8px 14px;border-radius:999px;background:var(--ink);color:var(--paper);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .cv-btn:hover{background:var(--accent);color:#141b2d}
 @media (max-width:720px){nav ul{display:none}}
@@ -201,6 +203,7 @@ main p,main li,.bio p{text-align:justify;hyphens:auto}
       <li><a href="#publications">Publications</a></li>
       <li><a href="#awards">Awards</a></li>
       <li><a href="#contact">Contact</a></li>
+      <li><a href="https://scholar.google.com/citations?user=TCx4BmIAAAAJ&amp;hl=en" target="_blank" rel="noopener" class="scholar" aria-label="Google Scholar" title="Google Scholar"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/></svg></a></li>
     </ul>
     <a class="cv-btn" href="cv_vasudev.pdf" target="_blank" rel="noopener">CV <span aria-hidden="true">↗</span></a>
   </div>
